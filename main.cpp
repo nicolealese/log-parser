@@ -3,8 +3,15 @@
 #include <string>
 #include <map>
 
-int main() {
-    std::ifstream log_file("test.log");
+int main(int argc, char* argv[]) {
+    // std::ifstream log_file("test.log");
+    if (argc < 2) {
+        std::cout << "Usage: ./main <path_to_log_file>" << std::endl;
+        return 1;
+    }
+    std::string filename = argv[1];
+
+    std::ifstream log_file(filename);
     std::string line;
 
     int total_line_count = 0;
