@@ -1,4 +1,6 @@
 #include <iostream>
+#include <thread>
+#include <vector>
 #include "LogParser.h"
 
 int main(int argc, char* argv[]) {
@@ -6,6 +8,8 @@ int main(int argc, char* argv[]) {
         std::cout << "Usage: ./main <path_to_log_file>" << std::endl;
         return 1;
     }
+    
+    std::vector<std::thread> threads;
 
     LogParser parser(argv[1]);
 
@@ -16,6 +20,12 @@ int main(int argc, char* argv[]) {
         std::cout << "INFO messages: " << parser.getInfoCount() << std::endl;
         std::cout << "WARNING messages: " << parser.getWarningCount() << std::endl;
         std::cout << "ERROR messages: " << parser.getErrorCount() << std::endl;
+    }
+
+    for (auto& t : threads) {
+        if (t.joinable()) {
+            t.join();
+        }
     }
     
     return 0;
