@@ -1,0 +1,11 @@
+# Build artifacts
+*.o
+main
+tests
+
+# Temporary test files
+empty.log
+no_keywords.log
+
+# macOS system files
+.DS_Store
