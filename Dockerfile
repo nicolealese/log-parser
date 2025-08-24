@@ -6,10 +6,6 @@ COPY . .
 
 RUN g++ -std=c++17 -static-libgcc -static-libstdc++ main.cpp LogParser.cpp -o main -pthread
 
-# FROM debian:slim
-
-# FROM ubuntu:latest
-
 FROM debian:bullseye-slim
 
 WORKDIR /app
