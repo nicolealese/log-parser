@@ -1,14 +1,16 @@
-FROM gcc:latest AS builder
+FROM gcc:bullseye AS builder
 
 WORKDIR /app
 
 COPY . .
 
-RUN g++ -std=c++17 main.cpp LogParser.cpp -o main -pthread
+RUN g++ -std=c++17 -static-libgcc -static-libstdc++ main.cpp LogParser.cpp -o main -pthread
 
 # FROM debian:slim
 
-FROM ubuntu:latest
+# FROM ubuntu:latest
+
+FROM debian:bullseye-slim
 
 WORKDIR /app
 
