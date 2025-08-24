@@ -1,55 +1,40 @@
-#include <iostream>
-#include <thread>
-#include <vector>
-#include <mutex>
+#include "httplib.h"
 #include "LogParser.h"
+#include "json.hpp"
 
-std::map<std::string, int> final_report_counts;
-int final_total_lines = 0;
-std::mutex report_mutex;
+#include <iostream>
 
-void parse_file_worker(const std::string& filename) {
-    LogParser parser(filename);
+using json = nlohmann::json;
 
-    if (parser.parse()) {
-        std::lock_guard<std::mutex> lock(report_mutex);
+int main() {
+    httplib::Server server;
 
-        final_total_lines += parser.getTotalLines();
-        final_report_counts["INFO"] += parser.getInfoCount();
-        final_report_counts["WARNING"] += parser.getWarningCount();
-        final_report_counts["ERROR"] += parser.getErrorCount();
-    } else {
-        std::cout << "Thread for '" << filename << "' failed to parse file." << std::endl;
-    }
-}
+    server.Get("/parse", [](const httplib::Request& request, httplib::Response& response) {
+        if (request.has_param("file")) {
+            auto file = request.get_param_value("file");
+            LogParser parser(file);
 
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cout << "Usage: ./main <path_to_log_file>" << std::endl;
-        return 1;
-    }
-    
-    std::vector<std::thread> threads;
+            if (parser.parse()) {
+                json result;
+                result["file"] = file;
+                result["total_lines"] = parser.getTotalLines();
+                result["info_count"] = parser.getInfoCount();
+                result["warning_count"] = parser.getWarningCount();
+                result["error_count"] = parser.getErrorCount();
 
-    for (int i = 1; i < argc; ++i) {
-        std::string filename = argv[i];
-        threads.emplace_back(parse_file_worker, filename);
-    }
+                response.set_content(result.dump(4), "application/json");
+            } else {
+                response.status = 404;
+                response.set_content("File not found or could not be parsed.", "text/plain");
+            }
+        } else {
+            response.status = 400;
+            response.set_content("Error: Missing 'file' query parameter.", "text/plain");
+        }
+    });
 
-    std::cout << "Launched " << threads.size() << " worker threads. Waiting for them to finish..." << std::endl;
+    std::cout << "Server started on http://localhost:8080" << std::endl;
+    server.listen("localhost", 8080);
 
-    LogParser parser(argv[1]);
-
-    for (auto& t : threads) {
-        t.join();  
-    }
-
-    std::cout << "All threads finished." << std::endl;
-    std::cout << "--- Final Report ---" << std::endl;
-    std::cout << "Total Lines Processed: " << final_total_lines << std::endl;
-    std::cout << "INFO messages: " << final_report_counts["INFO"] << std::endl;
-    std::cout << "WARNING messages: " << final_report_counts["WARNING"] << std::endl;
-    std::cout << "ERROR messages: " << final_report_counts["ERROR"] << std::endl;
-    
     return 0;
 }
